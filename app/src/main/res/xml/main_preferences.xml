@@ -4,12 +4,24 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_height="match_parent"
         android:layout_width="match_parent">
-    <SwitchPreference
-        android:defaultValue="true"
-        android:key="nextcloud_storage_ind"
-        android:title="NextCloud photos"
-        app:summary="NextCloud should be used for photos" />
+    <PreferenceCategory android:title="FetchContext">
+        <EditTextPreference
+            android:defaultValue="10000"
+            android:key="fetch_context_refresh_ms"
+            android:inputType="number"
+            android:title="Refresh Photos(ms)"
+            app:summary="Refresh photos each ? milliseconds"
+            />
+
+
+    </PreferenceCategory>
+
     <PreferenceCategory android:title="NextCloud">
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="nextcloud_storage_ind"
+            android:title="NextCloud photos"
+            app:summary="NextCloud should be used for photos" />
 
         <EditTextPreference
             android:defaultValue="https://nextcloud.com/"

@@ -1,6 +1,5 @@
 package org.mondhs.prisiminc.fetcher
 
-import android.content.SharedPreferences
 import android.util.Base64
 import android.util.Xml
 import okhttp3.MediaType.Companion.toMediaType
@@ -21,11 +20,11 @@ class FetchAdapterNextcloud() : IFetchAdapter {
         val result = getMediaList()//.map { "${config.serverUrl}/apps/photos/api/v1/preview/$it?x=64&y=64" }
         return result
     }
-    override fun previewImageUri(imgId:String):String{
-        return "${config.serverUrl}/apps/photos/api/v1/preview/$imgId?x=64&y=64"
+    override fun previewImageUri(imageId:String):String{
+        return "${config.serverUrl}/apps/photos/api/v1/preview/$imageId?x=64&y=64"
     }
-    override fun largeImageUri(imgId:String):String{
-        return "${config.serverUrl}/apps/photos/api/v1/preview/$imgId?x=${config.widthPixels}&y=${config.heightPixels}"
+    override fun largeImageUri(imageId:String):String{
+        return "${config.serverUrl}/apps/photos/api/v1/preview/$imageId?x=${config.widthPixels}&y=${config.heightPixels}"
     }
 
     override suspend fun getAuthHeader(): String {
@@ -33,48 +32,49 @@ class FetchAdapterNextcloud() : IFetchAdapter {
     }
 
     private fun checkAppPassword() {
-        val appPasswordVal = "${config.user}:${config.appPassword}";
+        val appPasswordVal = "${config.user}:${config.appPassword}"
 
         // it must be android.util.Base64
         appPassword = String(
             Base64.encode(appPasswordVal.toByteArray(), Base64.NO_WRAP)
-        );
+        )
 
 
 
     }
 
-    private fun getAppPassword(): String { //If you want to use get method to hit server
-
-        val appPasswordPattern = "(?<=<apppassword>)[^<]+".toRegex()
-
-        val client = OkHttpClient()
-        val theurl = "${config.serverUrl}/ocs/v2.php/core/getapppassword"
-        val request = Request.Builder().url(theurl)
-            .addHeader("OCS-APIRequest", "true")
-            .addHeader("authorization", "Basic TBD")
-            .build()
-        val response = client.newCall(request).execute()
-        val body = response.body!!.string()
-        val patternsFound = appPasswordPattern.findAll(body)
-        return patternsFound.first().value
-    }
+//    private fun getAppPassword(): String { //If you want to use get method to hit server
+//        val appPasswordPattern = "(?<=<apppassword>)[^<]+".toRegex()
+//
+//        val client = OkHttpClient()
+//        val theurl = "${config.serverUrl}/ocs/v2.php/core/getapppassword"
+//        val request = Request.Builder().url(theurl)
+//            .addHeader("OCS-APIRequest", "true")
+//            .addHeader("authorization", "Basic TBD")
+//            .build()
+//        val response = client.newCall(request).execute()
+//        val body = response.body!!.string()
+//        val patternsFound = appPasswordPattern.findAll(body)
+//        return patternsFound.first().value
+//    }
 
     private suspend fun getMediaList(): List<String> { //If you want to use get method to hit server
         val client = OkHttpClient()
         val theurl = "${config.serverUrl}/remote.php/dav/photos/${config.user}/albums/Prisiminc/"
+        logger.info("Hiting url: ${theurl}")
         val mediaType = "application/xml; charset=utf-8".toMediaType()
 
         val dataValue = "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"DAV:\" xmlns:oc=\"http://owncloud.org/ns\" xmlns:nc=\"http://nextcloud.org/ns\" xmlns:ocs=\"http://open-collaboration-services.org/ns\"> <d:prop> <d:getcontentlength /> <d:getcontenttype /> <d:getetag /> <d:getlastmodified /> <d:resourcetype /> <nc:face-detections /> <nc:file-metadata-size /> <nc:has-preview /> <nc:realpath /> <oc:favorite /> <oc:fileid /> <oc:permissions /> </d:prop></d:propfind>"
         val data: RequestBody = dataValue.toRequestBody(mediaType)
         val request = Request.Builder().url(theurl)
             .method("PROPFIND",data)
-            .addHeader("authorization", getAuthHeader())
+            .addHeader("Authorization", getAuthHeader())
             .build()
         val response = client.newCall(request).execute()
 
+        logger.info("response: ${response.code} ${response.message}")
 
-        val mediaIds = response.body?.byteStream().use { inputStream ->
+        response.body?.byteStream().use { inputStream ->
             val parser: XmlPullParser = Xml.newPullParser()
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false)
             parser.setInput(inputStream, null)
@@ -82,7 +82,6 @@ class FetchAdapterNextcloud() : IFetchAdapter {
         }
 
 
-        return mediaIds;
     }
 
 
@@ -110,9 +109,9 @@ class FetchAdapterNextcloud() : IFetchAdapter {
     }
 
     companion object {
-        private val logger = Logger.getLogger(FetchAdapterNextcloud::class.java.name);
-        private lateinit var appPassword:String;
-        val config = NextCloudConfig();
+        private val logger = Logger.getLogger(FetchAdapterNextcloud::class.java.name)
+        private lateinit var appPassword:String
+        val config = NextCloudConfig()
 
     }
 }

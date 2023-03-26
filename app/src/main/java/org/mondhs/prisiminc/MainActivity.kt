@@ -5,16 +5,12 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Bundle
-import android.util.DisplayMetrics
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import androidx.core.view.WindowCompat
-import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.preference.PreferenceManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -22,6 +18,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.mondhs.prisiminc.fetcher.*
+import java.util.logging.Logger
 
 
 class MainActivity : AppCompatActivity() {
@@ -35,10 +32,10 @@ class MainActivity : AppCompatActivity() {
 
         // creating a new array list and
         // initializing our recycler view.
-        var imagesRV: RecyclerView = findViewById(R.id.idRVImages)
+        val imagesRV: RecyclerView = findViewById(R.id.idRVImages)
         // calling a method to
         // prepare our recycler view.
-        prepareRecyclerView(imagesRV);
+        prepareRecyclerView(imagesRV)
 
         // we are calling a method to request
         // the permissions to read external storage.
@@ -55,7 +52,7 @@ class MainActivity : AppCompatActivity() {
         return when (item.itemId) {
             R.id.preferences_menu -> {
                 val i = Intent(this, SettingsActivity::class.java)
-                startActivity(i);
+                startActivity(i)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -76,7 +73,7 @@ class MainActivity : AppCompatActivity() {
             // if the permissions are already granted we are calling
             // a method to get all images from our external storage.
             Toast.makeText(this, "Permissions granted..", Toast.LENGTH_SHORT).show()
-            fetchImagePath();
+            fetchImagePath()
         } else {
             // if the permissions are not granted we are
             // calling a method to request permissions.
@@ -125,7 +122,7 @@ class MainActivity : AppCompatActivity() {
                         // if the permissions are accepted we are displaying a toast message
                         // and calling a method to get image path.
                         Toast.makeText(this, "Permissions Granted..", Toast.LENGTH_SHORT).show()
-                        fetchImagePath();
+                        fetchImagePath()
                     } else {
                         // if permissions are denied we are closing the app and displaying the toast message.
                         Toast.makeText(
@@ -138,14 +135,14 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    val nextCloudConfigListener =  NextCloudConfigListener();
+    val nextCloudConfigListener =  NextCloudConfigListener()
 
     private fun fetchImagePath() {
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
 //        FetchAdapterSingleton.setInstance(FetchAdapterLocal(contentResolver));
 
-        val fetchConfig = FetchConfig();
+        val fetchConfig = FetchConfig()
         fetchConfig.user = prefs.getString("nextcloud_user", "")!!
         fetchConfig.appPassword = prefs.getString("nextcloud_password", "")!!
         fetchConfig.serverUrl = prefs.getString("nextcloud_url", "")!!
@@ -153,23 +150,34 @@ class MainActivity : AppCompatActivity() {
 
         fetchConfig.widthPixels = Resources.getSystem().displayMetrics.widthPixels
         fetchConfig.heightPixels = Resources.getSystem().displayMetrics.heightPixels
+        fetchedContext.refreshMs = prefs.getLong("fetch_context_refresh_ms", 10000)
 
         val fetchAdapter = FetchAdapterSingleton.getNextCloudInstance(fetchConfig)
         prefs.registerOnSharedPreferenceChangeListener(nextCloudConfigListener)
 
 
-        CoroutineScope(Dispatchers.IO).launch  {
-            val resources = fetchAdapter.listResources();
-            fetchedContext.imagePaths.clear();
-            fetchedContext.imagePaths.addAll(resources);
-            CoroutineScope(Dispatchers.Main).launch{
-                imageRVAdapter.notifyDataSetChanged()
+
+        if(fetchConfig.serverUrl != "") {
+            CoroutineScope(Dispatchers.IO).launch {
+                /*var job =*/ try {
+                    val resources = fetchAdapter.listResources()
+                    logger.info("Found images: ${resources.size}")
+                    fetchedContext.imagePaths.clear()
+                    fetchedContext.imagePaths.addAll(resources)
+                    CoroutineScope(Dispatchers.Main).launch {
+                        imageRVAdapter.notifyDataSetChanged()
+                    }
+                } catch (certEx:Exception) {
+                    logger.severe("Https Cert Error")
+                    logger.severe(certEx.stackTraceToString())
+                }
             }
         }
     }
 
 
     companion object {
+        private val logger = Logger.getLogger(MainActivity::class.java.name)
         // on below line we are creating variables for
         // our array list, recycler view and adapter class.
         private const val PERMISSION_REQUEST_CODE = 200

@@ -1,8 +1,5 @@
 package org.mondhs.prisiminc
 
-//import com.squareup.picasso.Picasso
-
-import android.R.color
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -20,6 +17,7 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import org.mondhs.prisiminc.fetcher.FetchAdapterSingleton
 import java.util.*
+import java.util.logging.Logger
 import kotlin.concurrent.schedule
 
 
@@ -31,15 +29,16 @@ class ImageDetailActivity : AppCompatActivity() {
 //    lateinit var imgPath: String
     private lateinit var imageView: ImageView
     private var scaleGestureDetector: ScaleGestureDetector? = null
-    private val fetchedContext = FetchAdapterSingleton.getFetchContext();
+    private val fetchedContext = FetchAdapterSingleton.getFetchContext()
     private val fetchAdapter = FetchAdapterSingleton.getInstance()
 
     // on below line we are defining our scale factor.
     private var mScaleFactor = 1.0f
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        supportActionBar?.hide();
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        requestWindowFeature(Window.FEATURE_NO_TITLE)
+        supportActionBar?.hide()
         val view = this.window.decorView
         view.setBackgroundColor(Color.BLACK)
         //        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT;
@@ -68,8 +67,8 @@ class ImageDetailActivity : AppCompatActivity() {
             val timer = Timer("Refresh", false)
 
             imgId?.let {
-                renderImage(it);
-                val repeatInterval = 3000L;
+                renderImage(it)
+                val repeatInterval = fetchedContext.refreshMs
                 timer.schedule(repeatInterval, repeatInterval) {
                     renderImage(FetchAdapterSingleton.nextImgId())
                 }
@@ -81,7 +80,8 @@ class ImageDetailActivity : AppCompatActivity() {
 
 
     private fun renderImage(imgId: String){
-        val imgUrlStr = fetchAdapter.largeImageUri(imgId);
+        val imgUrlStr = fetchAdapter.largeImageUri(imgId)
+        logger.info("Render image $imgUrlStr")
         val imgUri = Uri.parse(imgUrlStr)
         val imageLoader = ImageLoader.Builder(this)
             .crossfade(true)
@@ -91,11 +91,11 @@ class ImageDetailActivity : AppCompatActivity() {
 
 
         GlobalScope.async {
-            imageView.rotation = 90f
+//            imageView.rotation = 90f
             val request = ImageRequest.Builder(theContext)
                 .data(imgUri)
                 .setHeader("authorization", fetchAdapter.getAuthHeader())
-                .crossfade(750)
+//                .crossfade(750)
 //                .transformations(BlurTransformation(theContext, radius = 18f))
                 .target(imageView)
                 .build()
@@ -130,8 +130,8 @@ class ImageDetailActivity : AppCompatActivity() {
 
             // on below line we are setting
             // scale x and scale y to our image view.
-            imageView!!.scaleX = mScaleFactor
-            imageView!!.scaleY = mScaleFactor
+            imageView.scaleX = mScaleFactor
+            imageView.scaleY = mScaleFactor
             return true
         }
     }
@@ -158,9 +158,12 @@ class ImageDetailActivity : AppCompatActivity() {
     }
 
     private fun showSystemUI() {
-        val mainContainer = window.decorView;
+        val mainContainer = window.decorView
         WindowCompat.setDecorFitsSystemWindows(window, true)
         WindowInsetsControllerCompat(window, mainContainer).show(WindowInsetsCompat.Type.systemBars())
 
+    }
+    companion object {
+        private val logger = Logger.getLogger(ImageDetailActivity::class.java.name)
     }
 }
