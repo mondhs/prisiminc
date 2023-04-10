@@ -27,8 +27,9 @@ class FetchAdapterNextcloud() : IFetchAdapter {
         return "${config.serverUrl}/apps/photos/api/v1/preview/$imageId?x=${config.widthPixels}&y=${config.heightPixels}"
     }
 
-    override suspend fun getAuthHeader(): String {
-        return "Basic $appPassword"
+    override suspend fun getAuthHeader(): Pair<String, String> {
+        val headerValue  = if (config.serverUrl == "") "" else "Basic $appPassword"
+        return Pair("Authorization", headerValue)
     }
 
     private fun checkAppPassword() {
@@ -64,11 +65,12 @@ class FetchAdapterNextcloud() : IFetchAdapter {
         logger.info("Hiting url: ${theurl}")
         val mediaType = "application/xml; charset=utf-8".toMediaType()
 
+        val authHeader = getAuthHeader()
         val dataValue = "<?xml version=\"1.0\"?><d:propfind xmlns:d=\"DAV:\" xmlns:oc=\"http://owncloud.org/ns\" xmlns:nc=\"http://nextcloud.org/ns\" xmlns:ocs=\"http://open-collaboration-services.org/ns\"> <d:prop> <d:getcontentlength /> <d:getcontenttype /> <d:getetag /> <d:getlastmodified /> <d:resourcetype /> <nc:face-detections /> <nc:file-metadata-size /> <nc:has-preview /> <nc:realpath /> <oc:favorite /> <oc:fileid /> <oc:permissions /> </d:prop></d:propfind>"
         val data: RequestBody = dataValue.toRequestBody(mediaType)
         val request = Request.Builder().url(theurl)
             .method("PROPFIND",data)
-            .addHeader("Authorization", getAuthHeader())
+            .addHeader(authHeader.first, authHeader.second)
             .build()
         val response = client.newCall(request).execute()
 
@@ -111,16 +113,10 @@ class FetchAdapterNextcloud() : IFetchAdapter {
     companion object {
         private val logger = Logger.getLogger(FetchAdapterNextcloud::class.java.name)
         private lateinit var appPassword:String
-        val config = NextCloudConfig()
+        val config = FetchConfig()
 
     }
 }
 
-data class NextCloudConfig(
-    var user:String = "",
-    var appPassword:String = "",
-    var serverUrl:String = "") {
-    var widthPixels: Int = 0
-    var heightPixels: Int = 0
-}
+
 

@@ -23,8 +23,8 @@ class FetchAdapterLocal(contentResolver:ContentResolver) : IFetchAdapter {
         return imageId
     }
 
-    override suspend fun getAuthHeader(): String {
-        return "";
+    override suspend fun getAuthHeader(): Pair<String, String> {
+        return Pair("","");
     }
 
     // on below line we are moving our cursor position

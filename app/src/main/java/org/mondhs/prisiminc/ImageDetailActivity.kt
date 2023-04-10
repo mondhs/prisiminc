@@ -92,9 +92,10 @@ class ImageDetailActivity : AppCompatActivity() {
 
         GlobalScope.async {
 //            imageView.rotation = 90f
+            val authHeader = fetchAdapter.getAuthHeader();
             val request = ImageRequest.Builder(theContext)
                 .data(imgUri)
-                .setHeader("authorization", fetchAdapter.getAuthHeader())
+                .setHeader(authHeader.first,authHeader.second )
 //                .crossfade(750)
 //                .transformations(BlurTransformation(theContext, radius = 18f))
                 .target(imageView)

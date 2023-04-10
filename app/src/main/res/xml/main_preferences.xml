@@ -16,6 +16,36 @@
 
     </PreferenceCategory>
 
+    <PreferenceCategory android:title="Immich">
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="immich_storage_ind"
+            android:title="Immich photos"
+            app:summary="Immich should be used for photos" />
+
+        <EditTextPreference
+            android:defaultValue="http://LOCAlHOST:2283"
+            android:key="immich_url"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="Immich server Url"
+            app:summary="Address to server &gt;protocol&lt;://&gt;server_name&lt;" />
+        <EditTextPreference
+            android:defaultValue="next"
+            android:key="immich_user"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="Immich User"
+            app:summary="Dedicated user for image preview" />
+        <EditTextPreference
+            android:key="immich_password"
+            android:selectAllOnFocus="true"
+            android:singleLine="true"
+            android:title="Immich Password"
+            app:summary="App password" />
+    </PreferenceCategory>
+
+
     <PreferenceCategory android:title="NextCloud">
         <SwitchPreference
             android:defaultValue="true"
@@ -44,4 +74,5 @@
             android:title="NextCloud Password"
             app:summary="App password" />
     </PreferenceCategory>
+
 </PreferenceScreen>

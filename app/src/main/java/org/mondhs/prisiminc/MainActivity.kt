@@ -2,6 +2,7 @@ package org.mondhs.prisiminc
 
 import android.Manifest.permission
 import android.content.Intent
+import android.content.SharedPreferences
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.os.Bundle
@@ -135,30 +136,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    val nextCloudConfigListener =  NextCloudConfigListener()
+
 
     private fun fetchImagePath() {
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
 //        FetchAdapterSingleton.setInstance(FetchAdapterLocal(contentResolver));
 
-        val fetchConfig = FetchConfig()
-        fetchConfig.user = prefs.getString("nextcloud_user", "")!!
-        fetchConfig.appPassword = prefs.getString("nextcloud_password", "")!!
-        fetchConfig.serverUrl = prefs.getString("nextcloud_url", "")!!
 
+//        var fetchAdapter:IFetchAdapter = FetchAdapterSingleton.createNextCloudInstance(prefs);
+//        if(fetchAdapter == null) {
+//            var fetchAdapter  = FetchAdapterSingleton.createImmichInstance(prefs);
+//        }
+        var fetchAdapter  = FetchAdapterSingleton.createImmichInstance(prefs);
 
-        fetchConfig.widthPixels = Resources.getSystem().displayMetrics.widthPixels
-        fetchConfig.heightPixels = Resources.getSystem().displayMetrics.heightPixels
-        fetchedContext.refreshMs = prefs.getLong("fetch_context_refresh_ms", 10000)
+        var authHeader = Pair("","")
 
-        val fetchAdapter = FetchAdapterSingleton.getNextCloudInstance(fetchConfig)
-        prefs.registerOnSharedPreferenceChangeListener(nextCloudConfigListener)
-
-
-
-        if(fetchConfig.serverUrl != "") {
-            CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.IO).launch {
+            authHeader = fetchAdapter?.getAuthHeader() ?: authHeader;
+            if(fetchAdapter != null && authHeader.first != "") {
+                prefs.registerOnSharedPreferenceChangeListener(FetchAdapterConfigListener())
                 /*var job =*/ try {
                     val resources = fetchAdapter.listResources()
                     logger.info("Found images: ${resources.size}")
@@ -167,13 +164,15 @@ class MainActivity : AppCompatActivity() {
                     CoroutineScope(Dispatchers.Main).launch {
                         imageRVAdapter.notifyDataSetChanged()
                     }
-                } catch (certEx:Exception) {
+                } catch (exception:Exception) {
                     logger.severe("Https Cert Error")
-                    logger.severe(certEx.stackTraceToString())
+                    logger.severe(exception.stackTraceToString())
                 }
             }
         }
     }
+
+
 
 
     companion object {

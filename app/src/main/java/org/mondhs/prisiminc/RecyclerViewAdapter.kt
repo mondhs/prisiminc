@@ -60,9 +60,10 @@ class RecyclerViewAdapter     // on below line we have created a constructor.
 
 
             GlobalScope.async {
+                val authHeader = fetchAdapter.getAuthHeader();
                 val request = ImageRequest.Builder(context)
                     .data(imgUri)
-                    .setHeader("authorization", fetchAdapter.getAuthHeader())
+                    .setHeader(authHeader.first,authHeader.second )
                     .target(holder.imageIV)
                     .build()
                 imageLoader.execute(request)
